@@ -1,65 +1,182 @@
-import Image from "next/image";
+import PostCard from "@/components/PostCard";
+import { PostCard as IPostCard } from "@/types";
+import SearchBar from "@/components/SearchBar";
+import Link from "next/link";
 
-export default function Home() {
+async function getPosts(tag?: string, search?: string): Promise<IPostCard[]> {
+  const params = new URLSearchParams();
+  if (tag) params.set("tag", tag);
+  if (search) params.set("search", search);
+  const res = await fetch(`${process.env.NEXTAUTH_URL}/api/posts?${params}`, { cache: "no-store" });
+  if (!res.ok) return [];
+  return res.json();
+}
+
+async function getAllTags(): Promise<string[]> {
+  const res = await fetch(`${process.env.NEXTAUTH_URL}/api/posts`, { cache: "no-store" });
+  if (!res.ok) return [];
+  const posts: IPostCard[] = await res.json();
+  return Array.from(new Set(posts.flatMap((p) => p.tags))).slice(0, 12);
+}
+
+export default async function Home({ searchParams }: { searchParams: Promise<{ tag?: string; search?: string }> }) {
+  const { tag, search } = await searchParams;
+  const [posts, allTags] = await Promise.all([getPosts(tag, search), getAllTags()]);
+
+  const featured = !tag && !search ? posts[0] : null;
+  const rest = !tag && !search ? posts.slice(1) : posts;
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <div className="min-h-screen bg-slate-950">
+
+      {/* Hero */}
+      {!tag && !search && (
+        <div className="relative overflow-hidden bg-slate-900 border-b border-slate-700/50">
+          {/* Decorative blobs */}
+          <div className="absolute top-0 left-1/4 w-96 h-96 bg-teal-500/10 rounded-full blur-3xl pointer-events-none" />
+          <div className="absolute bottom-0 right-1/4 w-80 h-80 bg-rose-500/10 rounded-full blur-3xl pointer-events-none" />
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-amber-500/5 rounded-full blur-2xl pointer-events-none" />
+
+          <div className="relative max-w-6xl mx-auto px-4 sm:px-6 py-20 text-center">
+            <span className="inline-flex items-center gap-2 text-xs font-semibold tracking-widest uppercase text-teal-400 mb-5 animate-fade-in">
+              <span className="w-8 h-px bg-teal-400" />
+              Welcome to BlogPlatform
+              <span className="w-8 h-px bg-teal-400" />
+            </span>
+            <h1 className="text-5xl sm:text-6xl font-bold text-slate-100 leading-tight mb-5 animate-fade-in-up">
+              Ideas worth{" "}
+              <span className="shimmer-text">reading</span>
+            </h1>
+            <p className="text-slate-400 text-lg max-w-xl mx-auto mb-10 animate-fade-in-up delay-100">
+              Discover stories, insights, and perspectives from writers on topics that matter to you.
+            </p>
+            <div className="flex justify-center animate-fade-in-up delay-200">
+              <SearchBar />
+            </div>
+
+            {/* Stats row */}
+            <div className="flex items-center justify-center gap-8 mt-12 animate-fade-in-up delay-300">
+              {[
+                { label: "Posts", value: posts.length },
+                { label: "Topics", value: allTags.length },
+              ].map(({ label, value }) => (
+                <div key={label} className="text-center">
+                  <p className="text-2xl font-bold text-teal-400">{value}</p>
+                  <p className="text-xs text-slate-500 uppercase tracking-wider">{label}</p>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
+      )}
+
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-10 space-y-10">
+
+        {/* Tag pills */}
+        {allTags.length > 0 && !search && (
+          <div className="flex items-center gap-2 flex-wrap animate-fade-in">
+            <Link
+              href="/"
+              className={`text-sm px-4 py-1.5 rounded-full border transition-all duration-200 ${
+                !tag
+                  ? "bg-teal-500 text-slate-900 border-teal-500 font-semibold shadow-lg shadow-teal-500/25"
+                  : "border-slate-600 text-slate-400 hover:border-teal-500/60 hover:text-teal-400 hover:bg-teal-500/10"
+              }`}
+            >
+              All
+            </Link>
+            {allTags.map((t, i) => (
+              <Link
+                key={t}
+                href={`/?tag=${t}`}
+                className={`text-sm px-4 py-1.5 rounded-full border transition-all duration-200 animate-fade-in delay-${Math.min(i * 100, 400)} ${
+                  tag === t
+                    ? "bg-teal-500 text-slate-900 border-teal-500 font-semibold shadow-lg shadow-teal-500/25"
+                    : "border-slate-600 text-slate-400 hover:border-teal-500/60 hover:text-teal-400 hover:bg-teal-500/10"
+                }`}
+              >
+                {t}
+              </Link>
+            ))}
+          </div>
+        )}
+
+        {/* Search / tag header */}
+        {(tag || search) && (
+          <div className="flex items-center justify-between animate-fade-in">
+            <div>
+              {search && (
+                <p className="text-slate-400">
+                  Results for{" "}
+                  <span className="font-semibold text-teal-300">"{search}"</span>
+                  <span className="ml-2 text-sm text-slate-500">({posts.length} post{posts.length !== 1 ? "s" : ""})</span>
+                </p>
+              )}
+              {tag && (
+                <p className="text-slate-400">
+                  Posts tagged{" "}
+                  <span className="font-semibold text-teal-400">#{tag}</span>
+                  <span className="ml-2 text-sm text-slate-500">({posts.length} post{posts.length !== 1 ? "s" : ""})</span>
+                </p>
+              )}
+            </div>
+            <Link href="/" className="text-sm text-rose-400 hover:text-rose-300 transition-colors flex items-center gap-1">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+              Clear
+            </Link>
+          </div>
+        )}
+
+        {/* Empty state */}
+        {posts.length === 0 && (
+          <div className="flex flex-col items-center justify-center py-28 text-center animate-fade-in">
+            <div className="w-20 h-20 rounded-2xl bg-slate-800 border border-slate-700 flex items-center justify-center mb-5 animate-float">
+              <svg className="w-10 h-10 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+            </div>
+            <p className="font-semibold text-slate-300 text-lg">No posts found</p>
+            <p className="text-slate-500 text-sm mt-1">Try a different search or browse all posts</p>
+            <Link href="/" className="mt-5 text-sm text-teal-400 hover:text-teal-300 transition-colors">
+              Browse all posts →
+            </Link>
+          </div>
+        )}
+
+        {/* Featured */}
+        {featured && (
+          <section className="animate-fade-in-up">
+            <div className="flex items-center gap-3 mb-4">
+              <span className="w-1 h-5 rounded-full bg-gradient-to-b from-teal-400 to-cyan-500" />
+              <h2 className="font-semibold text-slate-200 tracking-wide">Featured</h2>
+              <span className="flex-1 h-px bg-slate-800" />
+            </div>
+            <PostCard post={featured} featured />
+          </section>
+        )}
+
+        {/* Grid */}
+        {rest.length > 0 && (
+          <section>
+            {featured && (
+              <div className="flex items-center gap-3 mb-5">
+                <span className="w-1 h-5 rounded-full bg-gradient-to-b from-rose-400 to-amber-400" />
+                <h2 className="font-semibold text-slate-200 tracking-wide">Latest Posts</h2>
+                <span className="flex-1 h-px bg-slate-800" />
+              </div>
+            )}
+            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              {rest.map((post, i) => (
+                <div key={post._id} className={`delay-${Math.min(i * 100, 400)}`}>
+                  <PostCard post={post} />
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+      </div>
     </div>
   );
 }
