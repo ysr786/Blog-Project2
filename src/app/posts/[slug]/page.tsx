@@ -6,11 +6,14 @@ import CommentsSection from "@/components/CommentsSection";
 import { auth } from "@/auth";
 import Link from "next/link";
 import DeletePostButton from "@/components/DeletePostButton";
+import { connectDB } from "@/lib/db";
+import Post from "@/models/Post";
 
 async function getPost(slug: string): Promise<PostFull | null> {
-  const res = await fetch(`${process.env.NEXTAUTH_URL}/api/posts/${slug}`, { cache: "no-store" });
-  if (!res.ok) return null;
-  return res.json();
+  await connectDB();
+  const post = await Post.findOne({ slug }).populate("author", "name avatar bio").lean();
+  if (!post) return null;
+  return JSON.parse(JSON.stringify(post));
 }
 
 export default async function PostPage({ params }: { params: Promise<{ slug: string }> }) {

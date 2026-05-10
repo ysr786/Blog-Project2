@@ -2,20 +2,21 @@ import PostCard from "@/components/PostCard";
 import { PostCard as IPostCard } from "@/types";
 import SearchBar from "@/components/SearchBar";
 import Link from "next/link";
+import { connectDB } from "@/lib/db";
+import Post from "@/models/Post";
 
 async function getPosts(tag?: string, search?: string): Promise<IPostCard[]> {
-  const params = new URLSearchParams();
-  if (tag) params.set("tag", tag);
-  if (search) params.set("search", search);
-  const res = await fetch(`${process.env.NEXTAUTH_URL}/api/posts?${params}`, { cache: "no-store" });
-  if (!res.ok) return [];
-  return res.json();
+  await connectDB();
+  const query: Record<string, unknown> = { status: "published" };
+  if (tag) query.tags = tag;
+  if (search) query.$text = { $search: search };
+  const posts = await Post.find(query).populate("author", "name avatar").sort({ createdAt: -1 }).lean();
+  return JSON.parse(JSON.stringify(posts));
 }
 
 async function getAllTags(): Promise<string[]> {
-  const res = await fetch(`${process.env.NEXTAUTH_URL}/api/posts`, { cache: "no-store" });
-  if (!res.ok) return [];
-  const posts: IPostCard[] = await res.json();
+  await connectDB();
+  const posts = await Post.find({ status: "published" }).select("tags").lean();
   return Array.from(new Set(posts.flatMap((p) => p.tags))).slice(0, 12);
 }
 

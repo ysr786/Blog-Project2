@@ -3,11 +3,14 @@ import { redirect, notFound } from "next/navigation";
 import PostForm from "@/components/PostForm";
 import { PostFull } from "@/types";
 import Link from "next/link";
+import { connectDB } from "@/lib/db";
+import Post from "@/models/Post";
 
 async function getPost(slug: string): Promise<PostFull | null> {
-  const res = await fetch(`${process.env.NEXTAUTH_URL}/api/posts/${slug}`, { cache: "no-store" });
-  if (!res.ok) return null;
-  return res.json();
+  await connectDB();
+  const post = await Post.findOne({ slug }).populate("author", "name avatar").lean();
+  if (!post) return null;
+  return JSON.parse(JSON.stringify(post));
 }
 
 export default async function EditPostPage({ params }: { params: Promise<{ slug: string }> }) {
