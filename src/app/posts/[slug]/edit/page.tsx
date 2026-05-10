@@ -5,6 +5,7 @@ import { PostFull } from "@/types";
 import Link from "next/link";
 import { connectDB } from "@/lib/db";
 import Post from "@/models/Post";
+import "@/models/User";
 
 async function getPost(slug: string): Promise<PostFull | null> {
   await connectDB();

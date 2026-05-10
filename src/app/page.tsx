@@ -4,6 +4,7 @@ import SearchBar from "@/components/SearchBar";
 import Link from "next/link";
 import { connectDB } from "@/lib/db";
 import Post from "@/models/Post";
+import "@/models/User";
 
 async function getPosts(tag?: string, search?: string): Promise<IPostCard[]> {
   await connectDB();

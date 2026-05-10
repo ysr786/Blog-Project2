@@ -8,6 +8,7 @@ import Link from "next/link";
 import DeletePostButton from "@/components/DeletePostButton";
 import { connectDB } from "@/lib/db";
 import Post from "@/models/Post";
+import "@/models/User";
 
 async function getPost(slug: string): Promise<PostFull | null> {
   await connectDB();
